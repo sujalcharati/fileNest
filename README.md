@@ -44,7 +44,7 @@ If it says `Python 3.12.x` or higher, skip to step 2. Otherwise:
 **Option A, with Git:**
 
 ```
-git clone <REPO_URL> FileNest
+git clone https://github.com/sujalcharati/fileNest.git FileNest
 cd FileNest
 ```
 
@@ -210,5 +210,3 @@ FileNest/
     ├── icon.py        app icon
     └── cli.py         command-line tools
 ```
-#   f i l e N e s t  
- 
