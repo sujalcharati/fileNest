@@ -9,9 +9,30 @@ folder name, and jump straight to it, however deep in nested folders it's hidden
 - Native Windows 11 look: frosted-glass window, follows your dark/light mode and accent colour
 - 100% offline: your file list never leaves your computer
 
+## Download
+
+**[Download FileNest for Windows](https://github.com/sujalcharati/fileNest/releases/latest/download/FileNestSetup.exe)** (`FileNestSetup.exe`, ~22 MB, Windows 10/11, 64-bit)
+
+1. Run `FileNestSetup.exe`. No administrator rights needed.
+2. If Windows shows **"Windows protected your PC"**, click **More info → Run anyway**.
+   This appears for new apps that aren't code-signed yet; FileNest is open source, so you can
+   read every line of it here.
+3. Keep **"Start FileNest automatically when I sign in"** ticked, click **Install**, then **Finish**.
+4. The first launch builds your index (about a minute, once). Then press **Alt+Space** anywhere.
+
+To uninstall: **Settings → Apps → Installed apps → FileNest → Uninstall**. This also removes
+the index, settings and auto-start entry.
+
+All versions: [Releases page](https://github.com/sujalcharati/fileNest/releases)
+
 ---
 
-## Requirements
+## Install from source (for developers)
+
+Use this if you want to run the code directly or change it. Everyone else: use the
+[installer above](#download).
+
+### Requirements
 
 | | |
 |---|---|
@@ -19,10 +40,6 @@ folder name, and jump straight to it, however deep in nested folders it's hidden
 | **Python** | **3.12 or newer** |
 | **Disk space** | ~350 MB for the dependencies, plus ~300–500 MB for the index (depends on how many files you have) |
 | **Git** | Optional, only needed for step 2 option A |
-
----
-
-## Installation
 
 ### 1. Install Python (skip if you already have 3.12+)
 
@@ -117,7 +134,8 @@ You're done. Press **Alt+Space** anywhere to search.
 **Tray menu** (right-click the tray icon): Search files · Rebuild index now ·
 Start with Windows · Open settings file · Quit.
 
-**Starting it manually** (if you didn't enable *Start with Windows*): double-click `FileNest.bat`.
+**Starting it manually** (if it isn't set to start with Windows): open **FileNest** from the
+Start menu (installer), or double-click `FileNest.bat` (source install).
 
 ---
 
@@ -140,21 +158,25 @@ Restart FileNest after editing.
 
 ## Updating
 
-- **Git:** in the FileNest folder run `git pull`, then double-click `setup.bat`.
-- **ZIP:** download the new ZIP, extract it over the old folder, then double-click `setup.bat`.
-
-Quit FileNest from the tray first. Your index and settings are kept.
+- **Installer:** download and run the newest
+  [FileNestSetup.exe](https://github.com/sujalcharati/fileNest/releases/latest/download/FileNestSetup.exe).
+  It closes the running FileNest, replaces it, and keeps your index and settings.
+- **Source, Git:** quit FileNest from the tray, run `git pull`, then double-click `setup.bat`.
+- **Source, ZIP:** quit FileNest from the tray, extract the new ZIP over the old folder,
+  then double-click `setup.bat`.
 
 ---
 
 ## Uninstalling
 
+**Installer:** Settings → Apps → Installed apps → **FileNest** → Uninstall. It stops FileNest
+and removes the program, the index, the settings and the auto-start entry.
+
+**Source install:**
 1. Right-click the tray icon, **untick "Start with Windows"**, then click **Quit FileNest**.
 2. Delete the FileNest folder.
 3. Delete the index and settings: press `Win+R`, paste `%LOCALAPPDATA%\FileNest`,
    press Enter, and delete that folder.
-
-FileNest installs nothing else on your system.
 
 ---
 
@@ -162,6 +184,8 @@ FileNest installs nothing else on your system.
 
 | Problem | Fix |
 |---|---|
+| "Windows protected your PC" when running the installer | Click **More info → Run anyway**. This SmartScreen warning appears for apps without a paid code-signing certificate. |
+| Antivirus flags `FileNestSetup.exe` | Packaged Python apps occasionally get false positives. Download only from this repo's Releases page; you can also build the installer yourself (see below). |
 | `setup.bat` says the path is too long, or pip shows `No such file or directory … long path` | Move the FileNest folder to a shorter path (e.g. `C:\Users\<you>\FileNest`), delete the `.venv` folder inside it, and run `setup.bat` again. Alternatively, enable long paths: run PowerShell **as administrator**, then `New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force`, and restart. |
 | `setup.bat` says Python was not found | Reinstall Python and tick **"Add python.exe to PATH"**, then reopen the folder and run `setup.bat` again. |
 | Alt+Space does nothing | Another app owns that shortcut (often **PowerToys Run**). Hover over the tray icon to see which shortcut FileNest got, or change `hotkeys` in the settings. |
@@ -191,14 +215,44 @@ FileNest installs nothing else on your system.
 .venv\Scripts\python -m filenest.cli find resume   # search from the terminal
 ```
 
+### Building the installer yourself
+
+Needs a source install (above) plus [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+(`winget install JRSoftware.InnoSetup`):
+
+```
+.venv\Scripts\python -m pip install pyinstaller
+powershell -ExecutionPolicy Bypass -File packaging\build.ps1
+```
+
+Output: `build\installer\FileNestSetup.exe` (the app alone is in `build\dist\FileNest\`).
+
+### Releasing a new version (maintainers)
+
+1. Update `__version__` in `filenest/__init__.py` (e.g. `0.2.0`) and commit.
+2. Tag and push:
+   ```
+   git tag v0.2.0
+   git push origin main v0.2.0
+   ```
+3. GitHub Actions (`.github/workflows/release.yml`) builds the installer on Windows and
+   publishes a Release with `FileNestSetup.exe` attached. After about 5 minutes, the
+   **Download** link at the top of this README serves the new version.
+
 ### Project layout
 
 ```
 FileNest/
-├── setup.bat          one-click install
-├── FileNest.bat       start FileNest
+├── setup.bat          one-click install (source)
+├── FileNest.bat       start FileNest (source)
 ├── FileNest.pyw       entry point
 ├── requirements.txt   Python dependencies
+├── packaging/
+│   ├── build.ps1      builds FileNest.exe + FileNestSetup.exe
+│   ├── installer.iss  Inno Setup installer definition
+│   └── make_icon.py   renders the .ico file
+├── .github/workflows/
+│   └── release.yml    builds and publishes releases on version tags
 └── filenest/
     ├── app.py         tray, hotkey, background work
     ├── ui.py          search window

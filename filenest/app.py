@@ -59,9 +59,10 @@ class Controller(QObject):
             server.newConnection.connect(self._on_instance_message)
 
         self.watcher = Watcher(self.index, self.index.excluder, on_change=self.changed.emit)
-        self.watcher.start(self.roots)
+        if not args.no_index:
+            self.watcher.start(self.roots)
 
-        if self._is_stale():
+        if self._is_stale() and not args.no_index:
             self.rebuild()
         self._stale_timer = QTimer(self, interval=30 * 60 * 1000, timeout=self._check_stale)
         self._stale_timer.start()
@@ -192,6 +193,7 @@ def _parse(argv: list[str]) -> argparse.Namespace:
     ap.add_argument("--filter", default=None)
     ap.add_argument("--screenshot", default=None)
     ap.add_argument("--delay", type=int, default=1200)
+    ap.add_argument("--no-index", action="store_true", help="don't watch or rebuild (testing)")
     return ap.parse_args(argv)
 
 
